@@ -5,18 +5,19 @@ import { ROUTES_PATH } from '../constants/routes.js'
 import USERS_TEST from '../constants/usersTest.js'
 import Logout from "./Logout.js"
 
+// Fonction pour filtrer les factures par statut
 export const filteredBills = (data, status) => {
   return (data && data.length) ?
     data.filter(bill => {
       let selectCondition
 
-      // in jest environment
+      // en environnement jest
       if (typeof jest !== 'undefined') {
         selectCondition = (bill.status === status)
       }
       /* istanbul ignore next */
       else {
-        // in prod environment
+        // en environnement de production
         const userEmail = JSON.parse(localStorage.getItem("user")).email
         selectCondition =
           (bill.status === status) &&
@@ -27,12 +28,13 @@ export const filteredBills = (data, status) => {
     }) : []
 }
 
+// Génère le HTML pour une carte de facture
 export const card = (bill) => {
   const firstAndLastNames = bill.email.split('@')[0]
   const firstName = firstAndLastNames.includes('.') ?
     firstAndLastNames.split('.')[0] : ''
   const lastName = firstAndLastNames.includes('.') ?
-  firstAndLastNames.split('.')[1] : firstAndLastNames
+    firstAndLastNames.split('.')[1] : firstAndLastNames
 
   return (`
     <div class='bill-card' id='open-bill${bill.id}' data-testid='open-bill${bill.id}'>
@@ -52,10 +54,12 @@ export const card = (bill) => {
   `)
 }
 
+// Génère le HTML pour toutes les cartes de factures
 export const cards = (bills) => {
   return bills && bills.length ? bills.map(bill => card(bill)).join("") : ""
 }
 
+// Détermine le statut en fonction de l'index
 export const getStatus = (index) => {
   switch (index) {
     case 1:
@@ -72,6 +76,9 @@ export default class {
     this.document = document
     this.onNavigate = onNavigate
     this.store = store
+    this.bills = bills
+    this.currentIndex = null // Suivi de l'index de la liste actuelle
+
     $('#arrow-icon1').click((e) => this.handleShowTickets(e, bills, 1))
     $('#arrow-icon2').click((e) => this.handleShowTickets(e, bills, 2))
     $('#arrow-icon3').click((e) => this.handleShowTickets(e, bills, 3))
@@ -86,25 +93,12 @@ export default class {
   }
 
   handleEditTicket(e, bill, bills) {
-    if (this.counter === undefined || this.id !== bill.id) this.counter = 0
-    if (this.id === undefined || this.id !== bill.id) this.id = bill.id
-    if (this.counter % 2 === 0) {
-      bills.forEach(b => {
-        $(`#open-bill${b.id}`).css({ background: '#0D5AE5' })
-      })
-      $(`#open-bill${bill.id}`).css({ background: '#2A2B35' })
-      $('.dashboard-right-container div').html(DashboardFormUI(bill))
-      $('.vertical-navbar').css({ height: '150vh' })
-      this.counter ++
-    } else {
-      $(`#open-bill${bill.id}`).css({ background: '#0D5AE5' })
+    this.resetStyles(bills) // Réinitialise les styles des tickets
+    this.id = bill.id
+    $(`#open-bill${bill.id}`).css({ background: '#2A2B35' }) // Met à jour le style du ticket sélectionné
+    $('.dashboard-right-container div').html(DashboardFormUI(bill)) // Affiche les détails du ticket
+    $('.vertical-navbar').css({ height: '150vh' })
 
-      $('.dashboard-right-container div').html(`
-        <div id="big-billed-icon" data-testid="big-billed-icon"> ${BigBilledIcon} </div>
-      `)
-      $('.vertical-navbar').css({ height: '120vh' })
-      this.counter ++
-    }
     $('#icon-eye-d').click(this.handleClickIconEye)
     $('#btn-accept-bill').click((e) => this.handleAcceptSubmit(e, bill))
     $('#btn-refuse-bill').click((e) => this.handleRefuseSubmit(e, bill))
@@ -131,58 +125,62 @@ export default class {
   }
 
   handleShowTickets(e, bills, index) {
-    if (this.counter === undefined || this.index !== index) this.counter = 0
-    if (this.index === undefined || this.index !== index) this.index = index
-    if (this.counter % 2 === 0) {
-      $(`#arrow-icon${this.index}`).css({ transform: 'rotate(0deg)'})
-      $(`#status-bills-container${this.index}`)
-        .html(cards(filteredBills(bills, getStatus(this.index))))
-      this.counter ++
+    this.resetStyles(bills) // Réinitialise les styles des tickets
+    if (this.currentIndex === index) {
+      this.currentIndex = null // Replie la liste si elle est déjà ouverte
+      $(`#arrow-icon${index}`).css({ transform: 'rotate(90deg)' })
+      $(`#status-bills-container${index}`).html("")
     } else {
-      $(`#arrow-icon${this.index}`).css({ transform: 'rotate(90deg)'})
-      $(`#status-bills-container${this.index}`)
-        .html("")
-      this.counter ++
+      this.currentIndex = index // Déplie la nouvelle liste
+      $(`#arrow-icon${index}`).css({ transform: 'rotate(0deg)' })
+      $(`#status-bills-container${index}`).html(cards(filteredBills(bills, getStatus(index))))
+      bills.forEach(bill => {
+        $(`#open-bill${bill.id}`).click((e) => this.handleEditTicket(e, bill, bills))
+      })
     }
+  }
 
+  // Réinitialise les styles des tickets et de la colonne de droite
+  resetStyles(bills) {
     bills.forEach(bill => {
-      $(`#open-bill${bill.id}`).click((e) => this.handleEditTicket(e, bill, bills))
+      $(`#open-bill${bill.id}`).css({ background: '#0D5AE5' })
     })
-
-    return bills
-
+    $('.dashboard-right-container div').html(`
+      <div id="big-billed-icon" data-testid="big-billed-icon"> ${BigBilledIcon} </div>
+    `)
+    $('.vertical-navbar').css({ height: '120vh' })
   }
 
   getBillsAllUsers = () => {
     if (this.store) {
       return this.store
-      .bills()
-      .list()
-      .then(snapshot => {
-        const bills = snapshot
-        .map(doc => ({
-          id: doc.id,
-          ...doc,
-          date: doc.date,
-          status: doc.status
-        }))
-        return bills
-      })
-      .catch(error => {
-        throw error;
-      })
+        .bills()
+        .list()
+        .then(snapshot => {
+          const bills = snapshot
+            .map(doc => ({
+              id: doc.id,
+              ...doc,
+              date: doc.date,
+              status: doc.status
+            }))
+          return bills
+        })
+        .catch(error => {
+          throw error
+        })
     }
   }
 
-  // not need to cover this function by tests
+  // Fonction non couverte par les tests
   /* istanbul ignore next */
   updateBill = (bill) => {
     if (this.store) {
-    return this.store
-      .bills()
-      .update({data: JSON.stringify(bill), selector: bill.id})
-      .then(bill => bill)
-      .catch(console.log)
+      return this.store
+        .bills()
+        .update({ data: JSON.stringify(bill), selector: bill.id })
+        .then(bill => bill)
+        .catch(console.log)
     }
   }
 }
