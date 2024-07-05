@@ -6,8 +6,10 @@ export default class NewBill {
     this.document = document
     this.onNavigate = onNavigate
     this.store = store
+    // Sélectionne le formulaire et ajoute un écouteur d'événement pour la soumission
     const formNewBill = this.document.querySelector(`form[data-testid="form-new-bill"]`)
     formNewBill.addEventListener("submit", this.handleSubmit)
+    // Sélectionne l'input de fichier et ajoute un écouteur d'événement pour le changement de fichier
     const file = this.document.querySelector(`input[data-testid="file"]`)
     file.addEventListener("change", this.handleChangeFile)
     this.fileUrl = null
@@ -15,16 +17,31 @@ export default class NewBill {
     this.billId = null
     new Logout({ document, localStorage, onNavigate })
   }
+
   handleChangeFile = e => {
     e.preventDefault()
+    // Récupère le fichier sélectionné
     const file = this.document.querySelector(`input[data-testid="file"]`).files[0]
     const filePath = e.target.value.split(/\\/g)
     const fileName = filePath[filePath.length-1]
+    // Extrait l'extension du fichier et la met en minuscule
+    const fileExtension = fileName.split('.').pop().toLowerCase()
+    // Liste des extensions de fichier autorisées
+    const allowedExtensions = ['jpg', 'jpeg', 'png']
+    
+    // Vérifie si l'extension du fichier est autorisée
+    if (!allowedExtensions.includes(fileExtension)) {
+      alert("Veuillez télécharger un fichier au format jpg, jpeg ou png.")
+      this.document.querySelector(`input[data-testid="file"]`).value = ""
+      return
+    }
+
     const formData = new FormData()
     const email = JSON.parse(localStorage.getItem("user")).email
     formData.append('file', file)
     formData.append('email', email)
 
+    // Envoie le fichier au serveur via l'API de création de facture
     this.store
       .bills()
       .create({
@@ -40,6 +57,7 @@ export default class NewBill {
         this.fileName = fileName
       }).catch(error => console.error(error))
   }
+
   handleSubmit = e => {
     e.preventDefault()
     console.log('e.target.querySelector(`input[data-testid="datepicker"]`).value', e.target.querySelector(`input[data-testid="datepicker"]`).value)
@@ -57,7 +75,9 @@ export default class NewBill {
       fileName: this.fileName,
       status: 'pending'
     }
+    // Met à jour la facture avec les données saisies
     this.updateBill(bill)
+    // Redirige vers la page des factures
     this.onNavigate(ROUTES_PATH['Bills'])
   }
 

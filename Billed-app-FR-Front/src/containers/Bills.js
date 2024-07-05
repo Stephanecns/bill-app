@@ -21,11 +21,16 @@ export default class {
   }
 
   handleClickIconEye = (icon) => {
+    // Récupère l'URL de l'image du justificatif à partir de l'attribut "data-bill-url" de l'icône cliquée
     const billUrl = icon.getAttribute("data-bill-url")
+    // Calcule la largeur de l'image à afficher dans la modale, en prenant 50% de la largeur de la modale
     const imgWidth = Math.floor($('#modaleFile').width() * 0.5)
+    // Met à jour le contenu de la modale pour afficher l'image du justificatif
     $('#modaleFile').find(".modal-body").html(`<div style='text-align: center;' class="bill-proof-container"><img width=${imgWidth} src=${billUrl} alt="Bill" /></div>`)
+    // Affiche la modale
     $('#modaleFile').modal('show')
-  }
+}
+
 
   getBills = () => {
     if (this.store) {
