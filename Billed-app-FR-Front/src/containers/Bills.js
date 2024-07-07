@@ -16,10 +16,12 @@ export default class {
     new Logout({ document, localStorage, onNavigate })
   }
 
+  // Méthode pour gérer le clic sur le bouton de nouvelle facture
   handleClickNewBill = () => {
     this.onNavigate(ROUTES_PATH['NewBill'])
   }
 
+  // Méthode pour gérer le clic sur l'icône œil
   handleClickIconEye = (icon) => {
     // Récupère l'URL de l'image du justificatif à partir de l'attribut "data-bill-url" de l'icône cliquée
     const billUrl = icon.getAttribute("data-bill-url")
@@ -31,7 +33,7 @@ export default class {
     $('#modaleFile').modal('show')
 }
 
-
+  // Méthode pour obtenir la liste des factures
   getBills = () => {
     if (this.store) {
       return this.store
@@ -41,6 +43,7 @@ export default class {
         const bills = snapshot
           .map(doc => {
             try {
+              // Tente de formatter la date et le statut de chaque document
               return {
                 ...doc,
                 date: formatDate(doc.date),

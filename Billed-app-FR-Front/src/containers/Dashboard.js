@@ -141,21 +141,25 @@ export default class Dashboard {
 
   // Fonction pour afficher ou masquer les tickets en fonction de l'index
   handleShowTickets(e, bills, index) {
+    // Initialise le compteur pour l'index donné s'il n'est pas déjà défini
     if (this.counter[index] === undefined) this.counter[index] = 0;
-    
+    // Vérifie si le compteur est pair
     if (this.counter[index] % 2 === 0) {
+      // Si le compteur est pair, tourne l'icône de flèche vers le bas (0 degrés)
       $(`#arrow-icon${index}`).css({ transform: "rotate(0deg)" });
       $(`#status-bills-container${index}`).html(cards(filteredBills(bills, getStatus(index))));
     } else {
+      // Si le compteur est impair, tourne l'icône de flèche vers la droite (90 degrés)
       $(`#arrow-icon${index}`).css({ transform: "rotate(90deg)" });
       $(`#status-bills-container${index}`).html("");
     }
     this.counter[index]++;
 
+    // Ajoute des gestionnaires d'événements de clic pour chaque ticket
     bills.forEach((bill) => {
       $(`#open-bill${bill.id}`)
-        .off("click")
-        .click((e) => this.handleEditTicket(e, bill, bills));
+        .off("click") // Supprime tout gestionnaire de clic existant pour éviter les doublons
+        .click((e) => this.handleEditTicket(e, bill, bills)); // Ajoute un nouveau gestionnaire de clic pour éditer le ticket
     });
 
     return bills;

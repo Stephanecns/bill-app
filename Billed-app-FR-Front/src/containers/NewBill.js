@@ -17,20 +17,43 @@ export default class NewBill {
   }
 
   handleFileType({ target }) {
+    // Récupère le type de fichier du premier fichier sélectionné
     const { type } = target.files[0]
+    
+    // Réinitialise tout message de validité personnalisé
     target.setCustomValidity("")
+    
+    // Extrait l'extension du fichier à partir de son type MIME
     const fileExtension = type.split('/').pop();
+    
+    // Définit une liste des extensions de fichier autorisées
     const allowedExtensions = ['jpg', 'jpeg', 'png']
+    
+    // Vérifie si l'extension du fichier est dans la liste des extensions autorisées
     const isFileExtensionAllowed = allowedExtensions.includes(fileExtension);
+    
+    // Si l'extension du fichier n'est pas autorisée
     if (isFileExtensionAllowed === false) {
+      // Définit un message de validité personnalisé
       target.setCustomValidity("Formats acceptés : jpg, jpeg et png")
+      
+      // Affiche le message de validité personnalisé à l'utilisateur
       target.reportValidity()
+      
+      // Réinitialise la valeur du champ de fichier pour empêcher la soumission
       target.value = null
+      
+      // Indique que le fichier n'est pas valide
       this.isFileValid = false
+      
+      // Arrête l'exécution de la fonction et retourne false
       return false
     }
+    
+    // Si le fichier est valide, indique que le fichier est valide
     this.isFileValid = true
   }
+  
 
   handleChangeFile = e => {
     e.preventDefault()
